@@ -171,19 +171,23 @@ def load_memory(location):
 def main():
     global debug_mode
 
-    # There are no extra arguments
-    if len(sys.argv) == 1:
-        file_name = input('File name: ')
-    # There is only one extra argumen (a file name to load).
-    elif len(sys.argv) >= 2:
-        file_name = sys.argv[1]
-        # There are two or more extra arguments, if the first of these is '1',
-        # activate debug mode.
-        if len(sys.argv) >= 3:
-            debug_mode = sys.argv[2] == '1'
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+        if len(sys.argv) > 2:
+            debug_mode = '--debug' in sys.argv[2:]
+    else:
+        print()
+        print('Usage:')
+        print('  <filename> [options]')
+        print()
+        print('Options:')
+        print('  --debug  Show a detailed message every time an instruction is executed')
+        print()
+        return
+
 
     current_line = 0
-    with open(file_name, 'r') as f:
+    with open(filename, 'r') as f:
         for line in f:
             current_line += 1
 
