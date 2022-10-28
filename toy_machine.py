@@ -215,9 +215,7 @@ def main():
 # Check that a value is between -2^15 and 2^15-1
 def check_range(value):
     if value < -32768 or 32767 < value:
-        raise Exception(f'Error at {hex_string(program_counter)}: \
-                          Operation outside the range of -32768 and 32767 \
-                          ({str(value)})')
+        raise Exception(f'Error at {hex_string(program_counter)}: Operation outside the range of -32768 and 32767 ({str(value)})')
 
 
 def store_memory(address, value):
@@ -235,8 +233,7 @@ def store_register(address, value):
     address = str(address)[-1:]
     value = str(value).zfill(4)
     if address == '00':
-        raise Exception(f'Error at {hex_string(program_counter)}: \
-                          Register 00 is reserved')
+        raise Exception(f'Error at {hex_string(program_counter)}: Register 00 is reserved')
     registers[address] = value
 
 
