@@ -13,8 +13,6 @@ def debug(out):
 # Executes the instruction found at the memory location determined by the
 # program counter. Returns True if the program should halt, otherwise False.
 def execute():
-    global program_counter
-
     instruction = load_memory(hex_string(program_counter))
 
     # 'opcode', 'd', 's', 't', and 'addr' are the names given by the TOY
@@ -115,14 +113,14 @@ def execute():
 
         case '0': # Halt
             debug('Halting')
-            return True
+            return None
         # If the value in register 'd' == 0, set the program counter to 'addr'.
         case 'C':
             if decimal(registers[d]) == 0:
                 debug(f'Checked if register {d} ({registers[d]}) was equal to \
                         zero - it was, so set the program counter to \
                         {decimal(addr)}')
-                program_counter = decimal(addr) - 1
+                return decimal(addr)
             else:
                 debug(f'Checked if register {d} ({registers[d]}) was equal to \
                         zero - it was not')
@@ -132,7 +130,7 @@ def execute():
                 debug(f'Checked if register {d} ({registers[d]}) was greater than \
                         zero - it was, so set the program counter to \
                         {decimal(addr)}')
-                program_counter = decimal(addr) - 1
+                return decimal(addr)
             else:
                 debug(f'Checked if register {d} ({registers[d]}) was greater than \
                         zero - it was not')
@@ -140,7 +138,7 @@ def execute():
         case 'E':
             debug(f'Setting the program counter to register {d} \
                     ({decimal(registers[d]) + 1})')
-            program_counter = decimal(registers[d])
+            return decimal(registers[d]) + 1
         # Set the program counter in register 'd', and set the program counter to
         # 'addr'.
         case 'F':
@@ -148,10 +146,9 @@ def execute():
                     ({hex_string(program_counter)}) in register {d} \
                     and setting the program counter to {decimal(addr)}')
             store_register(d, hex_string(program_counter))
-            program_counter = decimal(addr) - 1
+            return decimal(addr)
 
-    program_counter += 1
-    return False
+    return program_counter + 1
 
 
 # Converts an integer to an 'XX' format where X is a hex digit.
@@ -212,9 +209,8 @@ def main():
 
             # raise Exception(f'Error: Unrecognized line format')
 
-    while True:
-        halt = execute()
-        if halt or program_counter > 255: break
+    while program_counter != None:
+        program_counter = execute()
 
 
 # Check that a value is between -2^15 and 2^15-1
