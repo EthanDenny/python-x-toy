@@ -15,7 +15,7 @@ def debug(out):
 def execute():
     global program_counter
 
-    instruction = load_memory(convert_to_hex_string(program_counter))
+    instruction = load_memory(hex_string(program_counter))
 
     # 'opcode', 'd', 's', 't', and 'addr' are the names given by the TOY
     # Reference Card. For consistency, they are also used here.
@@ -28,8 +28,8 @@ def execute():
     # Instructions 1 through 6 perform math operations on the values found
     # in two registers. For simplicity, those registers are loaded and
     # converted to decimal form.
-    a = convert_to_decimal(registers[s])
-    b = convert_to_decimal(registers[t])
+    a = decimal(registers[s])
+    b = decimal(registers[t])
 
     # All opcode values are taken from the TOY Reference Card.
 
@@ -37,27 +37,39 @@ def execute():
         case '1': # Add
             debug(f'Adding register {s} ({registers[s]}) to register {t} \
                     ({registers[t]}) and storing the result in register {d}')
-            math_op(d, a + b)
+            result = a + b
+            check_range(result)
+            store_register(d, long_hex_string(result))
         case '2': # Subtract
             debug(f'Subtracting register {t} ({registers[t]}) from register {s} \
                     ({registers[s]}) and storing the result in register {d}')
-            math_op(d, a - b)
+            result = a - b
+            check_range(result)
+            store_register(d, long_hex_string(result))
         case '3': # Binary AND
             debug(f'Performing binary AND on registers {s} and {t} and storing \
                     the result in register {d}')
-            math_op(d, a & b)
+            result = a & b
+            check_range(result)
+            store_register(d, long_hex_string(result))
         case '4': # Binary OR
             debug(f'Performing binary OR on registers {s} and {t} and storing the \
                     result in register {d}')
-            math_op(d, a ^ b)
+            result = a ^ b
+            check_range(result)
+            store_register(d, long_hex_string(result))
         case '5': # Binary left shift
             debug(f'Performing binary left shift on registers {s} by {t} and \
                     storing the result in register {d}')
-            math_op(d, a << b)
+            result = a << b
+            check_range(result)
+            store_register(d, long_hex_string(result))
         case '6': # Binary right shift
             debug(f'Performing binary right shift on registers {s} by {t} and \
                     storing the result in register {d}')
-            math_op(d, a >> b)
+            result = a >> b
+            check_range(result)
+            store_register(d, long_hex_string(result))
 
         # Store value 'addr' in register 'd'.
         case '7':
@@ -106,11 +118,11 @@ def execute():
             return True
         # If the value in register 'd' == 0, set the program counter to 'addr'.
         case 'C':
-            if convert_to_decimal(registers[d]) == 0:
+            if decimal(registers[d]) == 0:
                 debug(f'Checked if register {d} ({registers[d]}) was equal to \
                         zero - it was, so set the program counter to \
-                        {convert_to_decimal(addr)}')
-                program_counter = convert_to_decimal(addr) - 1
+                        {decimal(addr)}')
+                program_counter = decimal(addr) - 1
             else:
                 debug(f'Checked if register {d} ({registers[d]}) was equal to \
                         zero - it was not')
@@ -119,37 +131,41 @@ def execute():
             if int(registers[d], 16) > 0:
                 debug(f'Checked if register {d} ({registers[d]}) was greater than \
                         zero - it was, so set the program counter to \
-                        {convert_to_decimal(addr)}')
-                program_counter = convert_to_decimal(addr) - 1
+                        {decimal(addr)}')
+                program_counter = decimal(addr) - 1
             else:
                 debug(f'Checked if register {d} ({registers[d]}) was greater than \
                         zero - it was not')
         # Set the program counter to the value in register 'd'.
         case 'E':
             debug(f'Setting the program counter to register {d} \
-                    ({convert_to_decimal(registers[d]) + 1})')
-            program_counter = convert_to_decimal(registers[d])
+                    ({decimal(registers[d]) + 1})')
+            program_counter = decimal(registers[d])
         # Set the program counter in register 'd', and set the program counter to
         # 'addr'.
         case 'F':
             debug(f'Storing the program counter \
-                    ({convert_to_hex_string(program_counter)}) in register {d} \
-                    and setting the program counter to {convert_to_decimal(addr)}')
-            store_register(d, convert_to_hex_string(program_counter))
-            program_counter = convert_to_decimal(addr) - 1
+                    ({hex_string(program_counter)}) in register {d} \
+                    and setting the program counter to {decimal(addr)}')
+            store_register(d, hex_string(program_counter))
+            program_counter = decimal(addr) - 1
 
     program_counter += 1
     return False
 
 
 # Converts an integer to an 'XX' format where X is a hex digit.
-def convert_to_hex_string(i):
+def hex_string(i):
     hex_string = hex(i)
-    return hex_string[hex_string.find('x') + 1:].upper()
+    return hex_string[hex_string.find('x') + 1:].upper().zfill(2)
+
+# Converts an integer to an '00XX' format where X is a hex digit.
+def long_hex_string(i):
+    return hex_string(i).zfill(4)
 
 
 # Accounts for a four-digit hexadecimal two's complement representation.
-def convert_to_decimal(x):
+def decimal(x):
     decimal = int(x, 16)
     if decimal > 32767: decimal -= 65536
     return decimal
@@ -201,14 +217,12 @@ def main():
         if halt or program_counter > 255: break
 
 
-# After performing a math operation, check for errors then format and store
-# 'value' in register 'destination'.
-def math_op(destination, value):
+# Check that a value is between -2^15 and 2^15-1
+def check_range(value):
     if value < -32768 or 32767 < value:
-        raise Exception(f'Error at {convert_to_hex_string(program_counter)}: \
+        raise Exception(f'Error at {hex_string(program_counter)}: \
                           Operation outside the range of -32768 and 32767 \
                           ({str(value)})')
-    store_register(destination, convert_to_hex_string(value).zfill(4))
 
 
 def store_memory(address, value):
@@ -217,7 +231,7 @@ def store_memory(address, value):
 
     # Output if we are writing to memory location 'FF'.
     if address == 'FF':
-        print('> ' + value + ',', convert_to_decimal(value))
+        print('> ' + value + ',', decimal(value))
 
     memory[address] = value
 
@@ -234,8 +248,8 @@ def store_register(address, value):
 if __name__ == '__main__':
     # Initialize registers and memory.
     for i in range(16):
-        registers[convert_to_hex_string(i)] = '0000'
+        registers[hex_string(i)] = '0000'
     for i in range(256):
-        memory[convert_to_hex_string(i).zfill(2)] = '0000'
+        memory[long_hex_string(i)] = '0000'
 
     main()
