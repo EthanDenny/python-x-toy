@@ -7,12 +7,56 @@ memory = {} # Equivalent to 'M' in the TOY Reference Card.
 debug_mode = False # Output the details of every instruction.
 
 
-def debug(out):
-    if debug_mode: print(out)
+def print_debug(opcode, d, s, t, addr):
+    if not debug_mode: return
+    message = ''
 
-# Executes the instruction found at the memory location determined by the
-# program counter. Returns True if the program should halt, otherwise False.
-def execute():
+    match opcode:
+        case '1':
+            message = f'Adding register {s} ({registers[s]}) to register {t} ({registers[t]}) and storing the result in register {d}'
+        case '2':
+            message = f'Subtracting register {t} ({registers[t]}) from register {s} ({registers[s]}) and storing the result in register {d}'
+        case '3':
+            message = f'Performing binary AND on registers {s} and {t} and storing the result in register {d}'
+        case '4':
+            message = f'Performing binary OR on registers {s} and {t} and storing the result in register {d}'
+        case '5':
+            message = f'Performing binary left shift on registers {s} by {t} and storing the result in register {d}'
+        case '6':
+            message = f'Performing binary right shift on registers {s} by {t} and storing the result in register {d}'
+
+        case '7':
+            message = f'Storing {addr} in register {d}'
+        case '8':
+            if addr == 'FF': message = f'Storing input in memory {addr}'
+            else: message = f'Storing memory {addr} ({memory[addr]}) in register {d}'
+        case '9':
+            if addr == 'FF': message = f'Storing register {d} ({registers[d]}) in memory {addr} and printing {registers[d]}'
+            else: message = f'Storing register {d} ({registers[d]}) in memory {addr}'
+        case 'A':
+            if registers[t] == 'FF': message = f'Storing register {d} ({registers[d]}) in memory {load_memory(registers[t])} and printing {registers[d]}'
+            else: message = f'Storing register {d} ({registers[d]}) in memory {load_memory(registers[t])}'
+        case 'B':
+            if registers[t] == 'FF': message = f'Storing register {d} ({registers[d]}) in memory {registers[t]} and printing {registers[d]}'
+            else: message = f'Storing register {d} ({registers[d]}) in memory {registers[t]}'
+
+        case '0': # Halt
+            message = 'Halting')
+        case 'C':
+            if decimal(registers[d]) == 0: message = f'Checked if register {d} ({registers[d]}) was equal to zero - it was, so set the program counter to {decimal(addr)}'
+            else: message = f'Checked if register {d} ({registers[d]}) was equal to zero - it was not'
+        case 'D':
+            if int(registers[d], 16) > 0: message = f'Checked if register {d} ({registers[d]}) was greater than zero - it was, so set the program counter to {decimal(addr)}'
+            else: message = f'Checked if register {d} ({registers[d]}) was greater than zero - it was not'
+        case 'E':
+            message = f'Setting the program counter to register {d} ({decimal(registers[d]) + 1})'
+        case 'F':
+            message = f'Storing the program counter ({hex_string(program_counter)}) in register {d} and setting the program counter to {decimal(addr)}'
+        
+    print(message)
+
+
+def split_current_instruction():
     instruction = load_memory(hex_string(program_counter))
 
     # 'opcode', 'd', 's', 't', and 'addr' are the names given by the TOY
@@ -23,6 +67,16 @@ def execute():
     t = instruction[3]
     addr = instruction[2:4]
 
+    return opcode, d, s, t, addr
+
+
+# Executes the instruction found at the memory location determined by the
+# program counter. Returns True if the program should halt, otherwise False.
+def execute():
+    opcode, d, s, t, addr = split_current_instruction()
+    
+    print_debug(opcode, d, s, t, addr)
+
     # Instructions 1 through 6 perform math operations on the values found
     # in two registers. For simplicity, those registers are loaded and
     # converted to decimal form.
@@ -30,121 +84,62 @@ def execute():
     b = decimal(registers[t])
 
     # All opcode values are taken from the TOY Reference Card.
-
     match opcode:
-        case '1': # Add
-            debug(f'Adding register {s} ({registers[s]}) to register {t} \
-                    ({registers[t]}) and storing the result in register {d}')
+        case '1':
             result = a + b
             check_range(result)
             store_register(d, long_hex_string(result))
-        case '2': # Subtract
-            debug(f'Subtracting register {t} ({registers[t]}) from register {s} \
-                    ({registers[s]}) and storing the result in register {d}')
+        case '2':
             result = a - b
             check_range(result)
             store_register(d, long_hex_string(result))
-        case '3': # Binary AND
-            debug(f'Performing binary AND on registers {s} and {t} and storing \
-                    the result in register {d}')
+        case '3':
             result = a & b
             check_range(result)
             store_register(d, long_hex_string(result))
-        case '4': # Binary OR
-            debug(f'Performing binary OR on registers {s} and {t} and storing the \
-                    result in register {d}')
+        case '4':
             result = a ^ b
             check_range(result)
             store_register(d, long_hex_string(result))
-        case '5': # Binary left shift
-            debug(f'Performing binary left shift on registers {s} by {t} and \
-                    storing the result in register {d}')
+        case '5':
             result = a << b
             check_range(result)
             store_register(d, long_hex_string(result))
-        case '6': # Binary right shift
-            debug(f'Performing binary right shift on registers {s} by {t} and \
-                    storing the result in register {d}')
+        case '6':
             result = a >> b
             check_range(result)
             store_register(d, long_hex_string(result))
 
-        # Store value 'addr' in register 'd'.
         case '7':
-            debug(f'Storing {addr} in register {d}')
             store_register(d, addr)
-        # Store the value found at memory location 'addr' in register 'd',
         case '8':
-            if addr == 'FF':
-                debug(f'Storing input in memory {addr}')
-                memory[addr] = input(': ')
-            debug(f'Storing memory {addr} ({memory[addr]}) in register {d}')
+            if addr == 'FF': memory[addr] = input(': ')
             store_register(d, memory[addr])
-        # Store the value in register 'd' in memory location 'addr',
         case '9':
-            if addr == 'FF':
-                debug(f'Storing register {d} ({registers[d]}) in memory {addr} \
-                        and printing {registers[d]}')
-            else:
-                debug(f'Storing register {d} ({registers[d]}) in memory {addr}')
             store_memory(addr, registers[d])
-        # Store the value found at the memory location defined by the value in
-        # register 't', in register 'd' (See TOY Reference Card for a clearer
-        # explanation).
+
         case 'A':
-            if registers[t] == 'FF':
-                debug(f'Storing register {d} ({registers[d]}) in memory \
-                        {load_memory(registers[t])} and printing {registers[d]}')
-            else:
-                debug(f'Storing register {d} ({registers[d]}) in memory \
-                        {load_memory(registers[t])}')
+            # Store the value found at the memory location defined by the value in
+            # register 't', in register 'd' (See TOY Reference Card for a clearer
+            # explanation).
             store_register(d, load_memory(registers[t]))
-        # Store the value found at the memory location defined by the value in
-        # register 't', in the memory location defined by the value in register 'd'
-        # (See TOY Reference Card for a clearer explanation).
+
         case 'B':
-            if registers[t] == 'FF':
-                debug(f'Storing register {d} ({registers[d]}) in memory \
-                        {registers[t]} and printing {registers[d]}')
-            else:
-                debug(f'Storing register {d} ({registers[d]}) in memory \
-                        {registers[t]}')
+            # Store the value found at the memory location defined by the value in
+            # register 't', in the memory location defined by the value in register 'd'
+            # (See TOY Reference Card for a clearer explanation).
             store_memory(registers[t], registers[d])
 
-        case '0': # Halt
-            debug('Halting')
+        case '0':
+            # Halt
             return None
-        # If the value in register 'd' == 0, set the program counter to 'addr'.
         case 'C':
-            if decimal(registers[d]) == 0:
-                debug(f'Checked if register {d} ({registers[d]}) was equal to \
-                        zero - it was, so set the program counter to \
-                        {decimal(addr)}')
-                return decimal(addr)
-            else:
-                debug(f'Checked if register {d} ({registers[d]}) was equal to \
-                        zero - it was not')
-        # If the value in register 'd' > 0, set the program counter to 'addr'.
+            if decimal(registers[d]) == 0: return decimal(addr)
         case 'D':
-            if int(registers[d], 16) > 0:
-                debug(f'Checked if register {d} ({registers[d]}) was greater than \
-                        zero - it was, so set the program counter to \
-                        {decimal(addr)}')
-                return decimal(addr)
-            else:
-                debug(f'Checked if register {d} ({registers[d]}) was greater than \
-                        zero - it was not')
-        # Set the program counter to the value in register 'd'.
+            if int(registers[d], 16) > 0: return decimal(addr)
         case 'E':
-            debug(f'Setting the program counter to register {d} \
-                    ({decimal(registers[d]) + 1})')
             return decimal(registers[d]) + 1
-        # Set the program counter in register 'd', and set the program counter to
-        # 'addr'.
         case 'F':
-            debug(f'Storing the program counter \
-                    ({hex_string(program_counter)}) in register {d} \
-                    and setting the program counter to {decimal(addr)}')
             store_register(d, hex_string(program_counter))
             return decimal(addr)
 
