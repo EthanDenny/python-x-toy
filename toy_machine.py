@@ -41,7 +41,7 @@ def print_debug(opcode, d, s, t, addr):
             else: message = f'Storing register {d} ({registers[d]}) in memory {registers[t]}'
 
         case '0': # Halt
-            message = 'Halting')
+            message = 'Halting'
         case 'C':
             if decimal(registers[d]) == 0: message = f'Checked if register {d} ({registers[d]}) was equal to zero - it was, so set the program counter to {decimal(addr)}'
             else: message = f'Checked if register {d} ({registers[d]}) was equal to zero - it was not'
@@ -235,7 +235,7 @@ def store_register(address, value):
     address = str(address)[-1:]
     value = str(value).zfill(4)
     if address == '00':
-        raise Exception(f'Error at {convert_to_hex_string(program_counter)}: \
+        raise Exception(f'Error at {hex_string(program_counter)}: \
                           Register 00 is reserved')
     registers[address] = value
 
