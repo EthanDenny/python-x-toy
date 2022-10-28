@@ -5,6 +5,7 @@ program_counter = 16 # Equivalent to 'PC' in the TOY Reference Card.
 registers = {} # Equivalent to 'R' in the TOY Reference Card.
 memory = {} # Equivalent to 'M' in the TOY Reference Card.
 debug_mode = False # Output the details of every instruction.
+ascii_mode = False # I/O is converterd to and from ASCII text (as opposed to decimals)
 
 
 def print_debug(opcode, d, s, t, addr):
@@ -113,7 +114,10 @@ def execute():
         case '7':
             store_register(d, addr)
         case '8':
-            if addr == 'FF': memory[addr] = input(': ')
+            if addr == 'FF':
+                response = input(': ')
+                if ascii_mode: response = ord(response)
+                memory[addr] = response
             store_register(d, memory[addr])
         case '9':
             store_memory(addr, registers[d])
@@ -170,11 +174,13 @@ def load_memory(location):
 
 def main():
     global debug_mode
+    global ascii_mode
 
     if len(sys.argv) > 1:
         filename = sys.argv[1]
         if len(sys.argv) > 2:
             debug_mode = '--debug' in sys.argv[2:]
+            ascii_mode = '--ascii' in sys.argv[2:]
     else:
         print()
         print('Usage:')
@@ -182,6 +188,7 @@ def main():
         print()
         print('Options:')
         print('  --debug  Show a detailed message every time an instruction is executed')
+        print('  --ascii  Input and output is converted to and from ASCII text (e.g. inputting \'A\' will yield 65)')
         print()
         return
 
@@ -224,7 +231,9 @@ def store_memory(address, value):
 
     # Output if we are writing to memory location 'FF'.
     if address == 'FF':
-        print('> ' + value + ',', decimal(value))
+        output = decimal(value)
+        if ascii_mode: output = chr(output)
+        print('> ' + value + ',', output)
 
     memory[address] = value
 
