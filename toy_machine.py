@@ -99,20 +99,16 @@ def execute():
             store_register(d, long_hex_string(result))
         case '3':
             result = a & b
-            check_range(result)
             store_register(d, long_hex_string(result))
         case '4':
             result = a ^ b
-            check_range(result)
             store_register(d, long_hex_string(result))
         case '5':
             result = a << b
-            check_range(result)
             if result > 32767: result -= 65536
             store_register(d, long_hex_string(result))
         case '6':
             result = a >> b
-            check_range(result)
             if result < -32768: result += 65536
             store_register(d, long_hex_string(result))
 
