@@ -29,7 +29,7 @@ def print_debug(opcode, d, s, t, addr):
         case '7':
             message = f'Storing {addr} in register {d}'
         case '8':
-            if addr == 'FF': message = f'Storing input in memory {addr}'
+            if addr == 'FF': message = f'Storing input in register {d}'
             else: message = f'Storing memory {addr} ({memory[addr]}) in register {d}'
         case '9':
             if addr == 'FF': message = f'Storing register {d} ({registers[d]}) in memory {addr} and printing {registers[d]}'
