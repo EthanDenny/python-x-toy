@@ -154,6 +154,10 @@ def execute():
 
 
 # Converts an integer to an 'XX' format where X is a hex digit.
+def short_hex_string(i):
+    return hex_string(i)[-1]
+
+# Converts an integer to an 'XX' format where X is a hex digit.
 def hex_string(i):
     hex_string = hex(i)
     return hex_string[hex_string.find('x') + 1:].upper().zfill(2)
@@ -176,6 +180,7 @@ def load_memory(location):
 
 
 def main():
+    global program_counter
     global debug_mode
     global ascii_mode
 
@@ -252,8 +257,8 @@ def store_register(address, value):
 if __name__ == '__main__':
     # Initialize registers and memory.
     for i in range(16):
-        registers[hex_string(i)] = '0000'
+        registers[short_hex_string(i)] = '0000'
     for i in range(256):
-        memory[long_hex_string(i)] = '0000'
+        memory[hex_string(i)] = '0000'
 
     main()
