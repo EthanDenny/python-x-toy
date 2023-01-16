@@ -1,2 +1,2 @@
-# Python-X-TOY
- A Python implementation of the TOY imaginary machine from Princeton
+# python-x-toy
+A Python implementation of the TOY imaginary machine from Princeton
